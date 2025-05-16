@@ -1,68 +1,76 @@
 <template>
-  <div>
-    <h2>Диапазоны IP-адресов</h2>
-    <div v-if="range.start_ip && range.end_ip">
-      <p>Текущий диапазон: {{ range.start_ip }} - {{ range.end_ip }}</p>
-      <input v-model="newRangeStart" placeholder="Начальный IP" />
-      <input v-model="newRangeEnd" placeholder="Конечный IP" />
-      <button @click="updateRange">Обновить диапазон</button>
+  <div class="p-4 rounded-xl shadow bg-gray-800 space-y-4">
+    <h2 class="text-lg text-white">Диапазоны IP-адресов</h2>
+
+    <div v-if="range.start_ip && range.end_ip" class="text-gray-300">
+      <p>Текущий диапазон: <span class="font-mono">{{ range.start_ip }} - {{ range.end_ip }}</span></p>
     </div>
-    <div v-else>
-      <p>Диапазон не установлен</p>
+    <div v-else class="text-gray-400">Диапазон не установлен</div>
+
+    <div class="flex flex-col md:flex-row items-start md:items-center gap-2">
+      <input
+        v-model="newRangeStart"
+        type="text"
+        placeholder="Начальный IP"
+        class="input"
+      />
+      <input
+        v-model="newRangeEnd"
+        type="text"
+        placeholder="Конечный IP"
+        class="input"
+      />
+      <button
+        @click="updateRange"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition"
+      >
+        Обновить диапазон
+      </button>
     </div>
   </div>
 </template>
 
-<script>
-import axios from 'axios';
+<script setup>
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 
-export default {
-  data() {
-    return {
-      range: { start_ip: '', end_ip: '' }, // Инициализация с пустыми значениями для start_ip и end_ip
-      newRangeStart: '',
-      newRangeEnd: ''
-    };
-  },
-  methods: {
-    fetchRange() {
-      axios.get('/api/dhcp/ranges')
-        .then(response => {
-          if (response.data.current_range) {
-            this.range = response.data.current_range;
-          } else {
-            this.range = { start_ip: '', end_ip: '' }; // если нет диапазона, инициализируем пустыми значениями
-          }
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    },
-    updateRange() {
-      const data = {
-        start: this.newRangeStart,
-        end: this.newRangeEnd
-      };
+const range = ref({ start_ip: '', end_ip: '' })
+const newRangeStart = ref('')
+const newRangeEnd = ref('')
 
-      // Проверка формата IP-адреса
-      const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-      if (!ipPattern.test(this.newRangeStart) || !ipPattern.test(this.newRangeEnd)) {
-        alert("Некорректный формат IP-адреса");
-        return;
-      }
+const ipPattern =
+  /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
 
-      axios.post('/api/dhcp/ranges', data)
-        .then(() => {
-          alert('Диапазон обновлён');
-          this.fetchRange(); // Обновляем данные после успешного обновления диапазона
-        })
-        .catch(error => {
-          console.error("Ошибка при обновлении диапазона", error);
-        });
-    }
-  },
-  created() {
-    this.fetchRange(); // загружаем диапазон при создании компонента
+const fetchRange = async () => {
+  try {
+    const { data } = await axios.get('/api/dhcp/ranges')
+    range.value = data.current_range || { start_ip: '', end_ip: '' }
+  } catch (e) {
+    console.error('Ошибка при загрузке диапазона:', e)
   }
-};
+}
+
+const updateRange = async () => {
+  if (!ipPattern.test(newRangeStart.value) || !ipPattern.test(newRangeEnd.value)) {
+    alert('Некорректный формат IP-адреса')
+    return
+  }
+
+  try {
+    await axios.post('/api/dhcp/ranges', {
+      start: newRangeStart.value,
+      end: newRangeEnd.value
+    })
+    alert('Диапазон обновлён')
+    await fetchRange()
+  } catch (e) {
+    console.error('Ошибка при обновлении диапазона:', e)
+  }
+}
+
+onMounted(fetchRange)
 </script>
+
+<style scoped>
+
+</style>

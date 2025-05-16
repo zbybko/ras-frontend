@@ -1,14 +1,27 @@
 <template>
   <div class="p-5 bg-[#222228] mx-1 flex flex-col gap-4 text-white">
-    <h2 class="text-2xl ">Управление Wi-Fi</h2>
+    <h2 class="text-2xl">Управление Wi-Fi</h2>
 
     <div v-if="loading">Загрузка...</div>
     <div v-else-if="error">{{ error }}</div>
     <div v-else class="flex flex-col gap-4">
-      <div>
-        <p><strong>SSID:</strong> {{ wifiStatus.SSID }}</p>
-        <p><strong>Статус:</strong> {{ wifiStatus.Active ? 'Включен' : 'Выключен' }}</p>
-        <Button class="btn" @click="toggleWiFi">{{ wifiStatus.Active ? 'Выключить' : 'Включить' }} Wi-Fi</Button>
+      <div class="space-y-1">
+        <p><strong>SSID:</strong> {{ wifiStatus.ssid }}</p>
+        <p><strong>Статус:</strong> {{ wifiStatus.active ? 'Включен' : 'Выключен' }}</p>
+        <p><strong>Скрытый SSID:</strong> {{ wifiStatus.hidden_ssid ? 'Да' : 'Нет' }}</p>
+        <p><strong>Безопасность:</strong>
+          {{
+            wifiStatus.security === '0' ? 'Нет' :
+            wifiStatus.security === '1' ? 'WPA2' :
+            wifiStatus.security === '2' ? 'WPA3' :
+            'Неизвестно'
+          }}
+        </p>
+        <p><strong>Канал:</strong> {{ wifiStatus.channel }}</p>
+
+        <Button class="btn" @click="toggleWiFi">
+          {{ wifiStatus.active ? 'Выключить' : 'Включить' }} Wi-Fi
+        </Button>
       </div>
 
       <div class="flex flex-col gap-3">
@@ -36,16 +49,16 @@
         <div>
           <label>Тип безопасности:</label>
           <select class="form-item" v-model="securityType">
-            <option value="none">Нет</option>
-            <option value="wpa2">WPA2</option>
-            <option value="wpa3">WPA3</option>
+            <option value="0">Нет</option>
+            <option value="1">WPA2</option>
+            <option value="2">WPA3</option>
           </select>
           <Button class="btn" @click="setSecurity">Установить тип</Button>
         </div>
 
         <div>
           <label>Канал:</label>
-          <input class="form-item" v-model="channel" type="number" min="1" max="13" />
+          <input class="form-item" v-model.number="channel" type="number" min="1" max="13" />
           <Button class="btn" @click="setChannel">Установить канал</Button>
         </div>
       </div>
@@ -62,7 +75,7 @@ const wifiStatus = ref({});
 const newSSID = ref("");
 const hideSSID = ref(false);
 const newPassword = ref("");
-const securityType = ref("wpa2");
+const securityType = ref("1");
 const channel = ref(1);
 
 const loading = ref(true);
@@ -72,6 +85,14 @@ const fetchWiFiStatus = async () => {
   try {
     const res = await axios.get("/api/wifi/status");
     wifiStatus.value = res.data;
+
+    // Применяем данные в поля по умолчанию
+    newSSID.value = res.data.ssid || "";
+    hideSSID.value = res.data.hidden_ssid ?? false;
+    newPassword.value = res.data.password || "";
+    securityType.value = String(res.data.security ?? "1");
+    channel.value = res.data.channel ?? 1;
+
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -81,7 +102,7 @@ const fetchWiFiStatus = async () => {
 
 const toggleWiFi = async () => {
   try {
-    await axios.post(`/api/wifi/${wifiStatus.value.Active ? "disable" : "enable"}`);
+    await axios.post(`/api/wifi/${wifiStatus.value.active ? "disable" : "enable"}`);
     await fetchWiFiStatus();
   } catch (err) {
     error.value = err.message;
@@ -135,7 +156,3 @@ const setChannel = async () => {
 
 onMounted(fetchWiFiStatus);
 </script>
-
-<style scoped>
-
-</style>

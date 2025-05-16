@@ -1,12 +1,13 @@
 import { createWebHistory, createRouter } from "vue-router";
 import Home from "../views/HomeView.vue";
 import Login from "../views/LoginView.vue";
-import System from "../components/System.vue";
-
+import Settings from "../views/SettingsView.vue";
+import Graphics from "../views/GraphicsView.vue";
 const routes = [
-  { path: "/login", component: Login },
   { path: "/", component: Home },
-  { path: "/system", component: System },
+  { path: "/login", component: Login},
+  { path: "/settings", component: Settings},
+  { path: "/graphics", component: Graphics},
 ];
 
 const router = createRouter({

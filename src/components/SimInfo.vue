@@ -1,46 +1,23 @@
 <template>
-  <div
-    class="flex flex-col bg-neutral-700 rounded-lg p-2 border-neutral-600 border"
-    v-if="sim"
-  >
-    <div>
-      <h3 class="text-xl">
-        <span
-          v-if="sim.properties['operator-name'] === '--'"
-          class="text-[#B99209]"
-          >No operator</span
-        >
-        <span v-else class="text-red-500">
-          {{ sim.properties["operator-name"] }}
-        </span>
-      </h3>
-      <div class="text-sm font-mono text-neutral-400">{{ simName }}</div>
-    </div>
-    <div
-      class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-    >
-      <div class="property-group" v-for="p in mapProps()">
-        <div class="property-name">{{ p.name }}</div>
-        <div
-          v-if="typeof p.value == 'string'"
-          class="font-mono text-neutral-400"
-        >
-          {{ p.value }}
-        </div>
-        <div
-          v-if="typeof p.value == 'object'"
-          v-for="v in p.value"
-          class="font-mono text-neutral truncate"
-        >
-          {{ v }}
-        </div>
+  <div v-if="simData" class="mt-4 p-4 bg-gray-800 rounded-lg text-white">
+    <h4 class="text-lg font-semibold mb-2">Информация о SIM</h4>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div>
+        <p class="text-sm text-gray-400">ICCID</p>
+        <p class="font-mono">{{ simData.iccid }}</p>
       </div>
+      <div>
+        <p class="text-sm text-gray-400">IMSI</p>
+        <p class="font-mono">{{ simData.imsi }}</p>
+      </div>
+      <!-- Добавьте другие поля по необходимости -->
     </div>
   </div>
 </template>
+
 <script setup>
-import axios from "axios";
 import { ref, onMounted } from "vue";
+
 const props = defineProps({
   simName: {
     type: String,
@@ -48,48 +25,17 @@ const props = defineProps({
   },
 });
 
-const sim = ref({ properties: { active: false } });
+const simData = ref(null);
 
-onMounted(() => {
-  const param = encodeURIComponent(props.simName.split("/").pop());
-  axios
-    .post(`/api/sim/${param}`)
-    .then((response) => {
-      sim.value = response.data;
-    })
-    .catch((error) => console.log(error.message));
+onMounted(async () => {
+  try {
+    const param = encodeURIComponent(props.simName.split("/").pop());
+    const response = await fetch(`/api/sim/${param}`);
+    if (!response.ok) throw new Error("Ошибка загрузки SIM данных");
+    const data = await response.json();
+    simData.value = data.properties;
+  } catch (error) {
+    console.error("Ошибка при загрузке данных SIM:", error);
+  }
 });
-const mapProps = () => {
-  return [
-    { name: "Active", value: sim.value.properties.active },
-    { name: "Removability", value: sim.value.properties.removability },
-    { name: "ICCID", value: sim.value.properties.iccid },
-    { name: "GID1", value: sim.value.properties.gid1 },
-    { name: "GID2", value: sim.value.properties.gid2 },
-    { name: "Sim type", value: sim.value.properties["sim-type"] },
-    { name: "IMSI", value: sim.value.properties.imsi },
-    {
-      name: "Emergency numbers",
-      value: sim.value.properties["emergency-numbers"],
-    },
-    {
-      name: "Preferred networks",
-      value: sim.value.properties["preferred-networks"],
-    },
-  ];
-};
 </script>
-
-<style>
-@import "../style.css";
-
-.property-group {
-  @apply flex flex-col gap-1;
-}
-.property-name {
-  @apply font-bold;
-}
-.property-value {
-  @apply font-mono text-neutral-300;
-}
-</style>

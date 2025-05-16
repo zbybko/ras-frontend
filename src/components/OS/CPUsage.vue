@@ -1,43 +1,42 @@
 <template>
-    <div class="p-5 bg-[#222228] mx-1">
-      <h2>Загруженность процессора</h2>
-      <div v-if="loading">Загрузка...</div>
-      <div v-else-if="error">{{ error }}</div>
-      <div v-else>
+  <div >
+    <div v-if="loading">Загрузка...</div>
+    <div v-else-if="error">{{ error }}</div>
+    <div v-else>
+      <div>CPU</div>
+      <div class="text-sm text-white">
         <p><strong>Процессор:</strong> {{ osInfo.CpuStats.CPUCount }} ядер</p>
-  
-        <!-- Круглый прогресс-бар -->
-        <p>
+          <strong>Загруженность процессора:</strong> {{ Math.round(cpuLoad) }} %
           
-        </p>
-        <div class="flex flex-col items-center">
-          <svg width="100" height="100" viewBox="0 0 100 100">
-            <path
-              d="M10,90 A40,40 0 0,1 90,90"
-              fill="none"
-              stroke="#444"
-              stroke-width="10"
-              stroke-linecap="round"
-            />
-            <path
-              :d="arcPath"
-              fill="none"
-              stroke="#0066FF"
-              stroke-width="10"
-              stroke-linecap="round"
-            />
-            <text x="50" y="80" text-anchor="middle" font-size="16" fill="#fff">
-              {{ cpuLoad.toFixed(0) }}%
-            </text>
-          </svg>
-            <div class="text-sm text-white">
-                <strong>Загруженность процессора:</strong> {{ Math.round(cpuLoad) }} % </div>
         </div>
+      <!-- Круглый прогресс-бар -->
+      <div class="flex flex-col p-5 mx-1">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <path
+            d="M10,90 A40,40 0 0,1 90,90"
+            fill="none"
+            stroke="#444"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <path
+            :d="arcPath"
+            fill="none"
+            stroke="#0066FF"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <text x="50" y="90" text-anchor="middle" font-size="16" fill="#fff">
+            {{ cpuLoad.toFixed(0) }}%
+          </text>
+        </svg>
+       
       </div>
     </div>
-  </template>
-  
-  <script setup>
+  </div>
+</template>
+
+<script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
 
 const osInfo = ref({});
@@ -86,10 +85,8 @@ onUnmounted(() => {
 });
 </script>
 
-  
-  <style scoped>
-  text {
-    dominant-baseline: middle;
-  }
-  </style>
-  
+<style scoped>
+text {
+  dominant-baseline: middle;
+}
+</style>
